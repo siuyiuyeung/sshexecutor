@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Execution History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .result-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="bi bi-terminal"></i> SSH Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/configs">Configurations</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Execution History: <span th:text="${config.name}"></span></h1>
+        <a href="/configs" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Configurations
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Configuration Details</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Host:</strong> <span th:text="${config.host + ':' + config.port}"></span></p>
+                    <p><strong>Username:</strong> <span th:text="${config.username}"></span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Command:</strong> <code th:text="${config.command}"></code></p>
+                    <p><strong>Description:</strong> <span th:text="${config.description}"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Execution History</h3>
+    <div th:if="${history.isEmpty()}" class="alert alert-info">
+        No execution history found for this configuration.
+    </div>
+
+    <div th:each="result : ${history}" class="card mb-3">
+        <div class="card-header" th:classappend="${result.success ? 'bg-success text-white' : 'bg-danger text-white'}">
+            <div class="d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi" th:classappend="${result.success ? 'bi-check-circle' : 'bi-x-circle'}"></i>
+                        Executed at: <span th:text="${#temporals.format(result.executedAt, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                    </span>
+                <span>
+                        Exit Code: <span th:text="${result.exitCode}"></span> |
+                        Time: <span th:text="${result.executionTime + ' ms'}"></span>
+                    </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p><strong>Command:</strong> <code th:text="${result.command}"></code></p>
+
+            <div th:if="${result.output != null && !result.output.isEmpty()}" class="mb-3">
+                <strong>Output:</strong>
+                <div class="result-output" th:text="${result.output}"></div>
+            </div>
+
+            <div th:if="${result.error != null && !result.error.isEmpty()}">
+                <strong>Error:</strong>
+                <div class="result-output text-danger" th:text="${result.error}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

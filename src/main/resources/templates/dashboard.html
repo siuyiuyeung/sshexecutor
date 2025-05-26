@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Manager Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .result-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .config-card {
+            transition: transform 0.2s;
+        }
+        .config-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="bi bi-terminal"></i> SSH Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/configs">Configurations</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Dashboard</h1>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3>Quick Actions</h3>
+                <div>
+                    <button class="btn btn-primary" onclick="executeAll()">
+                        <i class="bi bi-play-circle"></i> Execute All
+                    </button>
+                    <button class="btn btn-success" onclick="executeSelected()">
+                        <i class="bi bi-check2-square"></i> Execute Selected
+                    </button>
+                    <a href="/configs/new" class="btn btn-secondary">
+                        <i class="bi bi-plus-circle"></i> New Configuration
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3>SSH Configurations</h3>
+            <div class="row" id="configCards">
+                <div th:each="config : ${configs}" class="col-md-6 col-lg-4 mb-3">
+                    <div class="card config-card h-100">
+                        <div class="card-body">
+                            <div class="form-check position-absolute top-0 end-0 m-2">
+                                <input class="form-check-input config-checkbox" type="checkbox"
+                                       th:value="${config.id}" th:id="'config-' + ${config.id}">
+                            </div>
+                            <h5 class="card-title" th:text="${config.name}"></h5>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-server"></i> <span th:text="${config.host + ':' + config.port}"></span><br>
+                                    <i class="bi bi-person"></i> <span th:text="${config.username}"></span>
+                                </small>
+                            </p>
+                            <p class="card-text" th:text="${config.description}"></p>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-primary" th:onclick="'executeConfig(' + ${config.id} + ')'">
+                                    <i class="bi bi-play"></i> Execute
+                                </button>
+                                <button class="btn btn-info" th:onclick="'testConnection(' + ${config.id} + ')'">
+                                    <i class="bi bi-wifi"></i> Test
+                                </button>
+                                <a th:href="@{/configs/{id}/history(id=${config.id})}" class="btn btn-secondary">
+                                    <i class="bi bi-clock-history"></i> History
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h3>Recent Executions</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Configuration</th>
+                        <th>Command</th>
+                        <th>Status</th>
+                        <th>Exit Code</th>
+                        <th>Execution Time</th>
+                        <th>Executed At</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="result : ${recentExecutions}">
+                        <td th:text="${result.sshConfig.name}"></td>
+                        <td>
+                            <code th:text="${#strings.abbreviate(result.command, 50)}"></code>
+                        </td>
+                        <td>
+                                    <span th:class="${result.success ? 'badge bg-success' : 'badge bg-danger'}"
+                                          th:text="${result.success ? 'Success' : 'Failed'}"></span>
+                        </td>
+                        <td th:text="${result.exitCode}"></td>
+                        <td th:text="${result.executionTime + ' ms'}"></td>
+                        <td th:text="${#temporals.format(result.executedAt, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    th:onclick="'viewResult(' + ${result.id} + ')'">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Result Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Execution Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+
+    function executeConfig(configId) {
+        fetch(`/configs/${configId}/execute`, { method: 'POST' })
+            .then(response => response.json())
+            .then(result => {
+                showResult(result);
+                setTimeout(() => location.reload(), 2000);
+            })
+            .catch(error => {
+                alert('Error executing configuration: ' + error);
+            });
+    }
+
+    function executeAll() {
+        if (!confirm('Execute all configurations?')) return;
+
+        fetch('/configs/execute-all', { method: 'POST' })
+            .then(response => response.json())
+            .then(results => {
+                showMultipleResults(results);
+                setTimeout(() => location.reload(), 3000);
+            })
+            .catch(error => {
+                alert('Error executing configurations: ' + error);
+            });
+    }
+
+    function executeSelected() {
+        const selected = Array.from(document.querySelectorAll('.config-checkbox:checked'))
+            .map(cb => parseInt(cb.value));
+
+        if (selected.length === 0) {
+            alert('Please select at least one configuration');
+            return;
+        }
+
+        fetch('/configs/execute-selected', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(selected)
+        })
+            .then(response => response.json())
+            .then(results => {
+                showMultipleResults(results);
+                setTimeout(() => location.reload(), 3000);
+            })
+            .catch(error => {
+                alert('Error executing configurations: ' + error);
+            });
+    }
+
+    function testConnection(configId) {
+        fetch(`/configs/${configId}/test`)
+            .then(response => response.json())
+            .then(success => {
+                if (success) {
+                    alert('Connection successful!');
+                } else {
+                    alert('Connection failed!');
+                }
+            })
+            .catch(error => {
+                alert('Error testing connection: ' + error);
+            });
+    }
+
+    function showResult(result) {
+        const content = `
+                <div class="mb-3">
+                    <strong>Configuration:</strong> ${result.sshConfig.name}<br>
+                    <strong>Command:</strong> <code>${result.command}</code><br>
+                    <strong>Status:</strong> <span class="${result.success ? 'text-success' : 'text-danger'}">${result.success ? 'Success' : 'Failed'}</span><br>
+                    <strong>Exit Code:</strong> ${result.exitCode}<br>
+                    <strong>Execution Time:</strong> ${result.executionTime} ms
+                </div>
+                ${result.output ? `<div class="mb-3">
+                    <strong>Output:</strong>
+                    <div class="result-output">${escapeHtml(result.output)}</div>
+                </div>` : ''}
+                ${result.error ? `<div class="mb-3">
+                    <strong>Error:</strong>
+                    <div class="result-output text-danger">${escapeHtml(result.error)}</div>
+                </div>` : ''}
+            `;
+        document.getElementById('resultContent').innerHTML = content;
+        resultModal.show();
+    }
+
+    function showMultipleResults(results) {
+        const content = results.map(result => `
+                <div class="card mb-3">
+                    <div class="card-header ${result.success ? 'bg-success text-white' : 'bg-danger text-white'}">
+                        ${result.sshConfig.name} - ${result.success ? 'Success' : 'Failed'}
+                    </div>
+                    <div class="card-body">
+                        <strong>Command:</strong> <code>${result.command}</code><br>
+                        <strong>Exit Code:</strong> ${result.exitCode}<br>
+                        ${result.output ? `<div class="mt-2">
+                            <strong>Output:</strong>
+                            <div class="result-output">${escapeHtml(result.output)}</div>
+                        </div>` : ''}
+                        ${result.error ? `<div class="mt-2">
+                            <strong>Error:</strong>
+                            <div class="result-output text-danger">${escapeHtml(result.error)}</div>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+        document.getElementById('resultContent').innerHTML = content;
+        resultModal.show();
+    }
+
+    function viewResult(resultId) {
+        // This would typically fetch the result details
+        alert('View result details for ID: ' + resultId);
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>

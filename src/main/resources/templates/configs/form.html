@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Configuration Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="bi bi-terminal"></i> SSH Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/configs">Configurations</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 th:text="${config.id == null ? 'New SSH Configuration' : 'Edit SSH Configuration'}"></h1>
+
+            <form th:action="@{/configs/save}" th:object="${config}" method="post">
+                <input type="hidden" th:field="*{id}">
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">Configuration Name</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}" required>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="host" class="form-label">Host</label>
+                        <input type="text" class="form-control" id="host" th:field="*{host}" required>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('host')}" th:errors="*{host}"></div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="port" class="form-label">Port</label>
+                        <input type="number" class="form-control" id="port" th:field="*{port}" required>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('port')}" th:errors="*{port}"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" th:field="*{username}" required>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" th:field="*{password}" required>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="command" class="form-label">Command (optional)</label>
+                    <input type="text" class="form-control" id="command" th:field="*{command}"
+                           placeholder="e.g., uname -a">
+                    <small class="form-text text-muted">Single command to execute</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="script" class="form-label">Script (optional)</label>
+                    <textarea class="form-control" id="script" th:field="*{script}" rows="5"
+                              placeholder="#!/bin/bash&#10;echo 'Hello World'"></textarea>
+                    <small class="form-text text-muted">Multi-line script to execute (overrides command if provided)</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" th:field="*{description}" rows="2"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="/configs" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    <div>
+                        <button type="button" class="btn btn-info" onclick="testConnection()">
+                            <i class="bi bi-wifi"></i> Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Configuration
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function testConnection() {
+        const configId = document.getElementById('id').value;
+        if (!configId) {
+            alert('Please save the configuration first before testing the connection.');
+            return;
+        }
+
+        fetch(`/configs/${configId}/test`)
+            .then(response => response.json())
+            .then(success => {
+                if (success) {
+                    alert('Connection test successful!');
+                } else {
+                    alert('Connection test failed. Please check your credentials and host information.');
+                }
+            })
+            .catch(error => {
+                alert('Error testing connection: ' + error);
+            });
+    }
+</script>
+</body>
+</html>
