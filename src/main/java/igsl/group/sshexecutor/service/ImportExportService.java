@@ -2,7 +2,6 @@ package igsl.group.sshexecutor.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import igsl.group.sshexecutor.dto.SshConfigDto;
 import igsl.group.sshexecutor.entity.SshConfig;
 import igsl.group.sshexecutor.repository.SshConfigRepository;
@@ -28,6 +27,7 @@ import java.util.zip.ZipOutputStream;
 public class ImportExportService {
     private final SshConfigRepository sshConfigRepository;
     private final ObjectMapper objectMapper;
+
     public byte[] exportConfigurations(List<Long> configIds) throws IOException {
         List<SshConfig> configs;
 
@@ -132,7 +132,10 @@ public class ImportExportService {
         config.setHost(dto.getHost());
         config.setPort(dto.getPort() != null ? dto.getPort() : 22);
         config.setUsername(dto.getUsername());
+        config.setAuthType(dto.getAuthType() != null ? dto.getAuthType() : SshConfig.AuthType.PASSWORD);
         config.setPassword(dto.getPassword());
+        config.setPrivateKey(dto.getPrivateKey());
+        config.setPassphrase(dto.getPassphrase());
         config.setCommand(dto.getCommand());
         config.setScript(dto.getScript());
         config.setDescription(dto.getDescription());
@@ -146,7 +149,10 @@ public class ImportExportService {
         dto.setHost(config.getHost());
         dto.setPort(config.getPort());
         dto.setUsername(config.getUsername());
+        dto.setAuthType(config.getAuthType());
         dto.setPassword(config.getPassword());
+        dto.setPrivateKey(config.getPrivateKey());
+        dto.setPassphrase(config.getPassphrase());
         dto.setCommand(config.getCommand());
         dto.setScript(config.getScript());
         dto.setDescription(config.getDescription());

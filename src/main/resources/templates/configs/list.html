@@ -81,7 +81,14 @@
                 <td th:text="${config.name}"></td>
                 <td th:text="${config.host}"></td>
                 <td th:text="${config.port}"></td>
-                <td th:text="${config.username}"></td>
+                <td>
+                    <span th:text="${config.username}"></span>
+                    <span class="badge"
+                          th:classappend="${config.authType.name() == 'PASSWORD'} ? 'bg-secondary' : 'bg-primary'"
+                          th:text="${config.authType.name() == 'PASSWORD'} ? 'PWD' : 'KEY'"
+                          th:title="${config.authType.name() == 'PASSWORD'} ? 'Password Authentication' : 'Private Key Authentication'">
+                            </span>
+                </td>
                 <td th:text="${config.description}"></td>
                 <td th:text="${#temporals.format(config.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                 <td>

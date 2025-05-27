@@ -65,9 +65,52 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Authentication Type</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="authType" id="authPassword"
+                               value="PASSWORD" th:field="*{authType}" checked>
+                        <label class="form-check-label" for="authPassword">
+                            Password Authentication
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="authType" id="authKey"
+                               value="PRIVATE_KEY" th:field="*{authType}">
+                        <label class="form-check-label" for="authKey">
+                            Private Key Authentication
+                        </label>
+                    </div>
+                </div>
+
+                <div id="passwordSection" class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" th:field="*{password}" required>
+                    <input type="password" class="form-control" id="password" th:field="*{password}">
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                </div>
+
+                <div id="keySection" style="display: none;">
+                    <div class="mb-3">
+                        <label for="privateKey" class="form-label">Private Key</label>
+                        <div class="input-group">
+                                <textarea class="form-control" id="privateKey" th:field="*{privateKey}" rows="10"
+                                          placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----"></textarea>
+                        </div>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#keyUploadModal">
+                                <i class="bi bi-upload"></i> Upload Key File
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="generateKeyPair()">
+                                <i class="bi bi-key"></i> Generate New Key Pair
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">Paste your private key content here or upload a key file</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="passphrase" class="form-label">Passphrase (if key is encrypted)</label>
+                        <input type="password" class="form-control" id="passphrase" th:field="*{passphrase}">
+                        <small class="form-text text-muted">Leave empty if the private key is not encrypted</small>
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -107,27 +150,226 @@
     </div>
 </div>
 
+<!-- Private Key Upload Modal -->
+<div class="modal fade" id="keyUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Private Key File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select a private key file from your computer:</p>
+                <input type="file" class="form-control" id="keyFileInput" accept=".pem,.key,.ppk,id_rsa,id_dsa,id_ecdsa,id_ed25519">
+                <small class="form-text text-muted mt-2">
+                    Supported formats: PEM (.pem, .key), PPK (.ppk), OpenSSH (id_rsa, id_dsa, etc.)
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="loadKeyFile()">Load Key</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Generation Modal -->
+<div class="modal fade" id="keyGenModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generated SSH Key Pair</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Important:</strong> Save both keys securely. The private key will be automatically loaded into the form.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label"><strong>Public Key</strong> (add this to ~/.ssh/authorized_keys on the server)</label>
+                    <textarea class="form-control" id="generatedPublicKey" rows="4" readonly></textarea>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard('generatedPublicKey')">
+                        <i class="bi bi-clipboard"></i> Copy Public Key
+                    </button>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label"><strong>Private Key</strong> (keep this secret!)</label>
+                    <textarea class="form-control" id="generatedPrivateKey" rows="10" readonly></textarea>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard('generatedPrivateKey')">
+                        <i class="bi bi-clipboard"></i> Copy Private Key
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="useGeneratedKey()">Use This Private Key</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Handle authentication type switching
+    document.addEventListener('DOMContentLoaded', function() {
+        const authRadios = document.querySelectorAll('input[name="authType"]');
+        const passwordSection = document.getElementById('passwordSection');
+        const keySection = document.getElementById('keySection');
+        const passwordInput = document.getElementById('password');
+        const privateKeyInput = document.getElementById('privateKey');
+
+        function toggleAuthSections() {
+            const selectedAuth = document.querySelector('input[name="authType"]:checked').value;
+
+            if (selectedAuth === 'PASSWORD') {
+                passwordSection.style.display = 'block';
+                keySection.style.display = 'none';
+                passwordInput.setAttribute('required', 'required');
+                privateKeyInput.removeAttribute('required');
+            } else {
+                passwordSection.style.display = 'none';
+                keySection.style.display = 'block';
+                passwordInput.removeAttribute('required');
+                privateKeyInput.setAttribute('required', 'required');
+            }
+        }
+
+        // Add event listeners
+        authRadios.forEach(radio => {
+            radio.addEventListener('change', toggleAuthSections);
+        });
+
+        // Initialize on page load
+        toggleAuthSections();
+    });
+
     function testConnection() {
-        const configId = document.getElementById('id').value;
-        if (!configId) {
-            alert('Please save the configuration first before testing the connection.');
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+
+        // Basic validation
+        const authType = formData.get('authType');
+        const username = formData.get('username');
+        const host = formData.get('host');
+
+        if (!host || !username) {
+            alert('Please fill in at least host and username before testing.');
             return;
         }
 
-        fetch(`/configs/${configId}/test`)
+        if (authType === 'PASSWORD' && !formData.get('password')) {
+            alert('Password is required for password authentication.');
+            return;
+        }
+
+        if (authType === 'PRIVATE_KEY' && !formData.get('privateKey')) {
+            alert('Private key is required for key authentication.');
+            return;
+        }
+
+        // If editing existing config, test it
+        const configId = document.querySelector('input[name="id"]').value;
+        if (configId) {
+            fetch(`/configs/${configId}/test`)
+                .then(response => response.json())
+                .then(success => {
+                    if (success) {
+                        alert('Connection test successful!');
+                    } else {
+                        alert('Connection test failed. Please check your credentials and host information.');
+                    }
+                })
+                .catch(error => {
+                    alert('Error testing connection: ' + error);
+                });
+        } else {
+            alert('Please save the configuration first before testing the connection.');
+        }
+    }
+
+    function loadKeyFile() {
+        const fileInput = document.getElementById('keyFileInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            document.getElementById('privateKey').value = content;
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('keyUploadModal'));
+            modal.hide();
+
+            // Clear file input
+            fileInput.value = '';
+        };
+
+        reader.onerror = function() {
+            alert('Error reading file');
+        };
+
+        reader.readAsText(file);
+    }
+
+    function generateKeyPair() {
+        if (!confirm('Generate a new 2048-bit RSA key pair?')) return;
+
+        fetch('/api/keys/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'keyType=RSA&keySize=2048'
+        })
             .then(response => response.json())
-            .then(success => {
-                if (success) {
-                    alert('Connection test successful!');
-                } else {
-                    alert('Connection test failed. Please check your credentials and host information.');
+            .then(data => {
+                if (data.error) {
+                    alert('Error generating keys: ' + data.error);
+                    return;
                 }
+
+                // Populate modal with generated keys
+                document.getElementById('generatedPublicKey').value = data.publicKey;
+                document.getElementById('generatedPrivateKey').value = data.privateKey;
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('keyGenModal'));
+                modal.show();
             })
             .catch(error => {
-                alert('Error testing connection: ' + error);
+                alert('Error generating keys: ' + error);
             });
+    }
+
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        element.select();
+        document.execCommand('copy');
+
+        // Show feedback
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+        setTimeout(() => {
+            button.innerHTML = originalText;
+        }, 2000);
+    }
+
+    function useGeneratedKey() {
+        const privateKey = document.getElementById('generatedPrivateKey').value;
+        document.getElementById('privateKey').value = privateKey;
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('keyGenModal'));
+        modal.hide();
     }
 </script>
 </body>

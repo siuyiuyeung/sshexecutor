@@ -2,6 +2,8 @@ package igsl.group.sshexecutor.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -13,10 +15,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
 @Data
@@ -42,8 +42,17 @@ public class SshConfig {
     @NotBlank(message = "Username is required")
     private String username;
 
-    @NotBlank(message = "Password is required")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_type")
+    private AuthType authType = AuthType.PASSWORD;
+
     private String password;
+
+    @Column(name = "private_key", columnDefinition = "TEXT")
+    private String privateKey;
+
+    @Column(name = "passphrase")
+    private String passphrase;
 
     @Column(columnDefinition = "TEXT")
     private String command;
@@ -70,19 +79,8 @@ public class SshConfig {
         updatedAt = LocalDateTime.now();
     }
 
-    @Override
-    public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
-        SshConfig sshConfig = (SshConfig) o;
-        return getId() != null && Objects.equals(getId(), sshConfig.getId());
-    }
-
-    @Override
-    public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    public enum AuthType {
+        PASSWORD,
+        PRIVATE_KEY
     }
 }

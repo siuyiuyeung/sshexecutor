@@ -3,6 +3,7 @@ package igsl.group.sshexecutor.service;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import igsl.group.sshexecutor.entity.ExecutionResult;
 import igsl.group.sshexecutor.entity.SshConfig;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
@@ -26,11 +28,34 @@ public class SshService {
         try {
             // Create session
             JSch jsch = new JSch();
-            session = jsch.getSession(config.getUsername(), config.getHost(), config.getPort());
-            session.setPassword(config.getPassword());
 
-            // Disable host key checking (for demo purposes - in production, use known_hosts)
-            session.setConfig("StrictHostKeyChecking", "no");
+            // Configure authentication based on type
+            if (config.getAuthType() == SshConfig.AuthType.PRIVATE_KEY) {
+                // Add private key
+                if (config.getPrivateKey() != null && !config.getPrivateKey().trim().isEmpty()) {
+                    setPrivateKey(config, jsch);
+                } else {
+                    throw new Exception("Private key is required for key-based authentication");
+                }
+            }
+
+            session = jsch.getSession(config.getUsername(), config.getHost(), config.getPort());
+
+            // Set password for password authentication
+            if (config.getAuthType() == SshConfig.AuthType.PASSWORD) {
+                if (config.getPassword() == null || config.getPassword().trim().isEmpty()) {
+                    throw new Exception("Password is required for password authentication");
+                }
+                session.setPassword(config.getPassword());
+            }
+
+            // Session configuration
+            java.util.Properties sessionConfig = new java.util.Properties();
+            sessionConfig.put("StrictHostKeyChecking", "no");
+            if (config.getAuthType() == SshConfig.AuthType.PRIVATE_KEY) {
+                sessionConfig.put("PreferredAuthentications", "publickey");
+            }
+            session.setConfig(sessionConfig);
 
             // Connect
             session.connect(SESSION_TIMEOUT);
@@ -74,7 +99,7 @@ public class SshService {
                     .build();
 
         } catch (Exception e) {
-            log.error("SSH execution failed for host: {}",  config.getHost(), e);
+            log.error("SSH execution failed for host: " + config.getHost(), e);
             long executionTime = System.currentTimeMillis() - startTime;
 
             return ExecutionResult.builder()
@@ -101,18 +126,50 @@ public class SshService {
         Session session = null;
         try {
             JSch jsch = new JSch();
+
+            // Configure authentication
+            if (config.getAuthType() == SshConfig.AuthType.PRIVATE_KEY) {
+                if (config.getPrivateKey() != null && !config.getPrivateKey().trim().isEmpty()) {
+                    setPrivateKey(config, jsch);
+                }
+            }
+
             session = jsch.getSession(config.getUsername(), config.getHost(), config.getPort());
-            session.setPassword(config.getPassword());
-            session.setConfig("StrictHostKeyChecking", "no");
+
+            if (config.getAuthType() == SshConfig.AuthType.PASSWORD) {
+                session.setPassword(config.getPassword());
+            }
+
+            java.util.Properties sessionConfig = new java.util.Properties();
+            sessionConfig.put("StrictHostKeyChecking", "no");
+            if (config.getAuthType() == SshConfig.AuthType.PRIVATE_KEY) {
+                sessionConfig.put("PreferredAuthentications", "publickey");
+            }
+            session.setConfig(sessionConfig);
+
             session.connect(5000); // 5 second timeout for test
             return true;
         } catch (Exception e) {
-            log.error("Connection test failed for host: {}", config.getHost(), e);
+            log.error("Connection test failed for host: " + config.getHost(), e);
             return false;
         } finally {
             if (session != null && session.isConnected()) {
                 session.disconnect();
             }
+        }
+    }
+
+    private void setPrivateKey(SshConfig config, JSch jsch) throws JSchException {
+        if (config.getPassphrase() != null && !config.getPassphrase().trim().isEmpty()) {
+            jsch.addIdentity("key",
+                    config.getPrivateKey().getBytes(StandardCharsets.UTF_8),
+                    null,
+                    config.getPassphrase().getBytes(StandardCharsets.UTF_8));
+        } else {
+            jsch.addIdentity("key",
+                    config.getPrivateKey().getBytes(StandardCharsets.UTF_8),
+                    null,
+                    null);
         }
     }
 }

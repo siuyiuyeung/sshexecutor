@@ -86,7 +86,14 @@
                                 <small class="text-muted">
                                     <i class="bi bi-server"></i> <span th:text="${config.host + ':' + config.port}"></span><br>
                                     <i class="bi bi-person"></i> <span th:text="${config.username}"></span>
+                                    <span class="badge ms-1"
+                                          th:classappend="${config.authType.name() == 'PASSWORD'} ? 'bg-secondary' : 'bg-primary'"
+                                          th:text="${config.authType.name() == 'PASSWORD'} ? 'PWD' : 'KEY'">
+                                        </span>
                                 </small>
+                            </p>>
+                            <i class="bi bi-person"></i> <span th:text="${config.username}"></span>
+                            </small>
                             </p>
                             <p class="card-text" th:text="${config.description}"></p>
                             <div class="btn-group btn-group-sm" role="group">
@@ -179,7 +186,6 @@
             .then(response => response.json())
             .then(result => {
                 showResult(result);
-                setTimeout(() => location.reload(), 2000);
             })
             .catch(error => {
                 alert('Error executing configuration: ' + error);
@@ -193,7 +199,6 @@
             .then(response => response.json())
             .then(results => {
                 showMultipleResults(results);
-                setTimeout(() => location.reload(), 3000);
             })
             .catch(error => {
                 alert('Error executing configurations: ' + error);
@@ -217,7 +222,6 @@
             .then(response => response.json())
             .then(results => {
                 showMultipleResults(results);
-                setTimeout(() => location.reload(), 3000);
             })
             .catch(error => {
                 alert('Error executing configurations: ' + error);

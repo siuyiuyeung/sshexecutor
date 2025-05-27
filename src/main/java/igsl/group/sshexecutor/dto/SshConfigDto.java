@@ -1,5 +1,6 @@
 package igsl.group.sshexecutor.dto;
 
+import igsl.group.sshexecutor.entity.SshConfig;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,10 @@ public class SshConfigDto {
     private String host;
     private Integer port;
     private String username;
+    private SshConfig.AuthType authType;
     private String password;
+    private String privateKey;
+    private String passphrase;
     private String command;
     private String script;
     private String description;
