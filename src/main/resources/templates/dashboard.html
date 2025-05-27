@@ -279,8 +279,14 @@
     }
 
     function viewResult(resultId) {
-        // This would typically fetch the result details
-        alert('View result details for ID: ' + resultId);
+        fetch(`/results/${resultId}`)
+            .then(response => response.json())
+            .then(result => {
+                showResult(result);
+            })
+            .catch(error => {
+                alert('Error fetching result details: ' + error);
+            });
     }
 
     function escapeHtml(text) {

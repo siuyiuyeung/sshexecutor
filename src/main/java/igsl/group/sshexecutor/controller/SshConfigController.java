@@ -112,4 +112,10 @@ public class SshConfigController {
         });
         return "configs/history";
     }
+
+    @GetMapping("/results/{id}")
+    @ResponseBody
+    public ExecutionResult getExecutionResult(@PathVariable Long id) {
+        return sshConfigService.getExecutionResult(id);
+    }
 }

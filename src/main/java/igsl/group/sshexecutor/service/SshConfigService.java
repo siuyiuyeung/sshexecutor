@@ -47,24 +47,16 @@ public class SshConfigService {
 
     @Transactional
     public ExecutionResult executeConfig(Long configId) {
-        Optional<SshConfig> configOpt = sshConfigRepository.findById(configId);
-        if (configOpt.isEmpty()) {
-            throw new RuntimeException("Configuration not found with id: " + configId);
-        }
-
-        SshConfig config = configOpt.get();
-        ExecutionResult result = sshService.executeCommand(config);
-        return executionResultRepository.save(result);
+        return sshConfigRepository.findById(configId)
+                .map(this::executeAndSave)
+                .orElseThrow(() -> new RuntimeException("Configuration not found with id: " + configId));
     }
 
     @Transactional
     public List<ExecutionResult> executeAllConfigs() {
         List<SshConfig> configs = sshConfigRepository.findAll();
         return configs.stream()
-                .map(config -> {
-                    ExecutionResult result = sshService.executeCommand(config);
-                    return executionResultRepository.save(result);
-                })
+                .map(this::executeAndSave)
                 .toList();
     }
 
@@ -87,8 +79,18 @@ public class SshConfigService {
         return executionResultRepository.findTop10ByOrderByExecutedAtDesc();
     }
 
+    public ExecutionResult getExecutionResult(Long id) {
+        return executionResultRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Execution result not found with id: " + id));
+    }
+
     public boolean testConnection(Long configId) {
         Optional<SshConfig> configOpt = sshConfigRepository.findById(configId);
         return configOpt.map(sshService::testConnection).orElse(false);
+    }
+
+    private ExecutionResult executeAndSave(SshConfig config) {
+        ExecutionResult result = sshService.executeCommand(config);
+        return executionResultRepository.save(result);
     }
 }
