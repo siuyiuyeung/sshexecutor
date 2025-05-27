@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Execution Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .result-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="bi bi-terminal"></i> SSH Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/configs">Configurations</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/executions">Executions</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Execution Results</h1>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form method="get" action="/executions">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="configId" class="form-label">Configuration</label>
+                    <select class="form-select" id="configId" name="configId">
+                        <option value="">All Configurations</option>
+                        <option th:each="config : ${configs}"
+                                th:value="${config.id}"
+                                th:text="${config.name}"
+                                th:selected="${configId == config.id}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All</option>
+                        <option value="true" th:selected="${status == 'true'}">Success</option>
+                        <option value="false" th:selected="${status == 'false'}">Failed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFrom" class="form-label">From Date</label>
+                    <input type="datetime-local" class="form-control" id="dateFrom" name="dateFrom" th:value="${dateFrom}">
+                </div>
+                <div class="col-md-3">
+                    <label for="dateTo" class="form-label">To Date</label>
+                    <input type="datetime-local" class="form-control" id="dateTo" name="dateTo" th:value="${dateTo}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">
+                        Found <strong th:text="${totalElements}">0</strong> results
+                        (Page <span th:text="${currentPage + 1}">1</span> of <span th:text="${totalPages}">1</span>)
+                    </span>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSelected()" disabled id="deleteBtn">
+                        <i class="bi bi-trash"></i> Delete Selected
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="exportResults()">
+                        <i class="bi bi-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" class="form-check-input" id="selectAll" onchange="toggleSelectAll()">
+                </th>
+                <th>Configuration</th>
+                <th>Command</th>
+                <th>Status</th>
+                <th>Exit Code</th>
+                <th>Duration</th>
+                <th>Executed At</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="result : ${results}">
+                <td>
+                    <input type="checkbox" class="form-check-input result-checkbox"
+                           th:value="${result.id}" onchange="updateDeleteButton()">
+                </td>
+                <td th:text="${result.sshConfig.name}"></td>
+                <td>
+                    <code th:text="${#strings.abbreviate(result.command, 40)}"
+                          th:title="${result.command}"></code>
+                </td>
+                <td>
+                            <span th:class="${result.success ? 'badge bg-success' : 'badge bg-danger'}"
+                                  th:text="${result.success ? 'Success' : 'Failed'}"></span>
+                </td>
+                <td th:text="${result.exitCode}"></td>
+                <td th:text="${result.executionTime + ' ms'}"></td>
+                <td th:text="${#temporals.format(result.executedAt, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary"
+                            th:onclick="'viewResult(' + ${result.id} + ')'">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            th:onclick="'deleteResult(' + ${result.id} + ')'">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav th:if="${totalPages > 1}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                <a class="page-link" th:href="@{/executions(page=${currentPage - 1}, size=${pageSize}, configId=${configId}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    Previous
+                </a>
+            </li>
+
+            <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                class="page-item"
+                th:classappend="${i == currentPage} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/executions(page=${i}, size=${pageSize}, configId=${configId}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}"
+                   th:text="${i + 1}">1</a>
+            </li>
+
+            <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                <a class="page-link" th:href="@{/executions(page=${currentPage + 1}, size=${pageSize}, configId=${configId}, status=${status}, dateFrom=${dateFrom}, dateTo=${dateTo})}">
+                    Next
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- Result Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Execution Result Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.result-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateDeleteButton();
+    }
+
+    function updateDeleteButton() {
+        const checked = document.querySelectorAll('.result-checkbox:checked');
+        const deleteBtn = document.getElementById('deleteBtn');
+        deleteBtn.disabled = checked.length === 0;
+    }
+
+    function deleteSelected() {
+        const selected = Array.from(document.querySelectorAll('.result-checkbox:checked'))
+            .map(cb => parseInt(cb.value));
+
+        if (selected.length === 0) return;
+
+        if (!confirm(`Delete ${selected.length} selected execution result(s)?`)) return;
+
+        fetch('/executions/delete-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(selected)
+        })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Error deleting results');
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+    }
+
+    function deleteResult(resultId) {
+        if (!confirm('Delete this execution result?')) return;
+
+        fetch(`/executions/${resultId}/delete`, { method: 'POST' })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Error deleting result');
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+    }
+
+    function viewResult(resultId) {
+        fetch(`/results/${resultId}`)
+            .then(response => response.json())
+            .then(result => {
+                showResult(result);
+            })
+            .catch(error => {
+                alert('Error fetching result details: ' + error);
+            });
+    }
+
+    function showResult(result) {
+        const content = `
+                <div class="mb-3">
+                    <strong>Configuration:</strong> ${result.sshConfig.name}<br>
+                    <strong>Host:</strong> ${result.sshConfig.host}:${result.sshConfig.port}<br>
+                    <strong>Command:</strong> <code>${escapeHtml(result.command)}</code><br>
+                    <strong>Status:</strong> <span class="${result.success ? 'text-success' : 'text-danger'}">${result.success ? 'Success' : 'Failed'}</span><br>
+                    <strong>Exit Code:</strong> ${result.exitCode}<br>
+                    <strong>Execution Time:</strong> ${result.executionTime} ms<br>
+                    <strong>Executed At:</strong> ${new Date(result.executedAt).toLocaleString()}
+                </div>
+                ${result.output ? `<div class="mb-3">
+                    <strong>Output:</strong>
+                    <div class="result-output">${escapeHtml(result.output)}</div>
+                </div>` : ''}
+                ${result.error ? `<div class="mb-3">
+                    <strong>Error:</strong>
+                    <div class="result-output text-danger">${escapeHtml(result.error)}</div>
+                </div>` : ''}
+            `;
+        document.getElementById('resultContent').innerHTML = content;
+        resultModal.show();
+    }
+
+    function exportResults() {
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = '/executions/export?' + params.toString();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>
