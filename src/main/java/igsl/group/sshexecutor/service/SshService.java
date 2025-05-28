@@ -25,6 +25,9 @@ public class SshService {
         Session session = null;
         Channel channel = null;
 
+        log.info("Starting SSH execution for host: {} ({}@{}:{})",
+                config.getName(), config.getUsername(), config.getHost(), config.getPort());
+
         try {
             // Create session
             JSch jsch = new JSch();
@@ -88,6 +91,14 @@ public class SshService {
             int exitCode = channel.getExitStatus();
             long executionTime = System.currentTimeMillis() - startTime;
 
+            log.info("SSH execution completed for {} - Exit code: {}, Time: {}ms",
+                    config.getName(), exitCode, executionTime);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Command output for {}: {}", config.getName(),
+                        outputStream.toString().substring(0, Math.min(outputStream.toString().length(), 200)));
+            }
+
             return ExecutionResult.builder()
                     .sshConfig(config)
                     .command(commandToExecute)
@@ -99,7 +110,8 @@ public class SshService {
                     .build();
 
         } catch (Exception e) {
-            log.error("SSH execution failed for host: " + config.getHost(), e);
+            log.error("SSH execution failed for {} ({}@{}:{})",
+                    config.getName(), config.getUsername(), config.getHost(), config.getPort(), e);
             long executionTime = System.currentTimeMillis() - startTime;
 
             return ExecutionResult.builder()

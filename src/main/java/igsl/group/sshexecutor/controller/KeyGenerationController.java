@@ -46,7 +46,7 @@ public class KeyGenerationController {
 
             // Get public key
             ByteArrayOutputStream publicKeyOut = new ByteArrayOutputStream();
-            keyPair.writePublicKey(publicKeyOut, "ssh-manager-generated-key");
+            keyPair.writePublicKey(publicKeyOut, "ssh-executor-generated-key");
             String publicKey = publicKeyOut.toString();
 
             // Dispose of key pair
