@@ -34,6 +34,14 @@ spring:
 server:
   port: 8080
 
+# SSH Execution Configuration
+ssh:
+  execution:
+    max-concurrent-connections: 10
+    connection-timeout: 30000
+    execution-timeout: 30000
+    use-virtual-threads: true
+
 # Logging
 logging:
   level:
