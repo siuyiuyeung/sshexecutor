@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .cron-preset {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cron-preset:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/"><i class="bi bi-terminal"></i> SSH Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/configs">Configurations</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/executions">Executions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/schedules">Schedules</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 th:text="${schedule.id == null ? 'New Scheduled Task' : 'Edit Scheduled Task'}"></h1>
+
+            <form th:action="@{/schedules/save}" th:object="${schedule}" method="post">
+                <input type="hidden" th:field="*{id}">
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">Task Name</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}" required>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="sshConfig" class="form-label">SSH Configuration</label>
+                    <select class="form-select" id="sshConfig" th:field="*{sshConfig}" required>
+                        <option value="">Select a configuration...</option>
+                        <option th:each="config : ${configs}"
+                                th:value="${config.id}"
+                                th:text="${config.name + ' (' + config.host + ')'}">
+                        </option>
+                    </select>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('sshConfig')}" th:errors="*{sshConfig}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="cronExpression" class="form-label">Cron Expression</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="cronExpression"
+                               th:field="*{cronExpression}" required
+                               placeholder="0 0 * * * *">
+                        <button type="button" class="btn btn-outline-secondary" onclick="validateCron()">
+                            <i class="bi bi-check-circle"></i> Validate
+                        </button>
+                    </div>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('cronExpression')}" th:errors="*{cronExpression}"></div>
+                    <small class="form-text text-muted">
+                        Format: second minute hour day month weekday (Spring 6-field format)
+                    </small>
+                    <div id="cronFeedback" class="mt-1"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Quick Presets</label>
+                    <div class="list-group">
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 * * * * *', 'Every minute')">
+                            <div class="d-flex justify-content-between">
+                                <span>Every minute</span>
+                                <code>0 * * * * *</code>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 */5 * * * *', 'Every 5 minutes')">
+                            <div class="d-flex justify-content-between">
+                                <span>Every 5 minutes</span>
+                                <code>0 */5 * * * *</code>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 0 * * * *', 'Every hour')">
+                            <div class="d-flex justify-content-between">
+                                <span>Every hour</span>
+                                <code>0 0 * * * *</code>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 0 0 * * *', 'Daily at midnight')">
+                            <div class="d-flex justify-content-between">
+                                <span>Daily at midnight</span>
+                                <code>0 0 0 * * *</code>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 0 9 * * MON-FRI', 'Weekdays at 9 AM')">
+                            <div class="d-flex justify-content-between">
+                                <span>Weekdays at 9 AM</span>
+                                <code>0 0 9 * * MON-FRI</code>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 0 0 * * SUN', 'Weekly on Sunday')">
+                            <div class="d-flex justify-content-between">
+                                <span>Weekly on Sunday</span>
+                                <code>0 0 0 * * SUN</code>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action cron-preset"
+                           onclick="setCron('0 0 0 1 * *', 'Monthly on 1st')">
+                            <div class="d-flex justify-content-between">
+                                <span>Monthly on 1st</span>
+                                <code>0 0 0 1 * *</code>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" th:field="*{description}" rows="2"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="active" th:field="*{active}">
+                        <label class="form-check-label" for="active">
+                            Active (start scheduling immediately)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <h6>Cron Expression Help:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Format:</strong> second minute hour day month weekday</li>
+                        <li><strong>Special characters:</strong>
+                            <ul>
+                                <li><code>*</code> = any value</li>
+                                <li><code>*/n</code> = every n units</li>
+                                <li><code>n-m</code> = range from n to m</li>
+                                <li><code>n,m</code> = specific values n and m</li>
+                            </ul>
+                        </li>
+                        <li><strong>Examples:</strong>
+                            <ul>
+                                <li><code>0 30 9 * * *</code> = Every day at 9:30 AM</li>
+                                <li><code>0 0 */2 * * *</code> = Every 2 hours</li>
+                                <li><code>0 0 8-18 * * MON-FRI</code> = Every hour from 8 AM to 6 PM on weekdays</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="/schedules" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Schedule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function setCron(expression, description) {
+        document.getElementById('cronExpression').value = expression;
+        validateCron();
+        showFeedback('success', `Set to: ${description}`);
+    }
+
+    function validateCron() {
+        const expression = document.getElementById('cronExpression').value;
+        if (!expression) {
+            showFeedback('warning', 'Please enter a cron expression');
+            return;
+        }
+
+        fetch(`/schedules/validate-cron?expression=${encodeURIComponent(expression)}`)
+            .then(response => response.json())
+            .then(valid => {
+                if (valid) {
+                    showFeedback('success', 'Valid cron expression');
+                } else {
+                    showFeedback('danger', 'Invalid cron expression');
+                }
+            })
+            .catch(error => {
+                showFeedback('danger', 'Error validating cron expression');
+            });
+    }
+
+    function showFeedback(type, message) {
+        const feedback = document.getElementById('cronFeedback');
+        feedback.className = `text-${type} small`;
+        feedback.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+    }
+
+    // Validate on page load if editing
+    document.addEventListener('DOMContentLoaded', function() {
+        const cronInput = document.getElementById('cronExpression');
+        if (cronInput.value) {
+            validateCron();
+        }
+    });
+</script>
+</body>
+</html>
