@@ -7,11 +7,25 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 public class SshConfigEntityListener {
+
     @PrePersist
+    public void onCreate(SshConfig config) {
+        config.setCreatedAt(LocalDateTime.now());
+        config.setUpdatedAt(LocalDateTime.now());
+        encryptSensitiveData(config);
+    }
+
     @PreUpdate
-    public void encryptSensitiveData(SshConfig config) {
+    public void onUpdate(SshConfig config) {
+        config.setUpdatedAt(LocalDateTime.now());
+        encryptSensitiveData(config);
+    }
+
+    private static void encryptSensitiveData(SshConfig config) {
         // Encrypt password if not already encrypted
         if (config.getPassword() != null && !config.getPassword().isEmpty() && !config.isPasswordEncrypted() && !JasyptUtils.isEncrypted(config.getPassword())) {
             config.setPassword(JasyptUtils.encrypt(config.getPassword()));
@@ -30,13 +44,13 @@ public class SshConfigEntityListener {
         // Decrypt password
         if (config.getPassword() != null && !config.getPassword().isEmpty() && JasyptUtils.isEncrypted(config.getPassword())) {
             config.setPassword(JasyptUtils.decrypt(config.getPassword()));
-            config.setPasswordEncrypted(true);
+            config.setPasswordEncrypted(false);
         }
 
         // Decrypt passphrase
         if (config.getPassphrase() != null && !config.getPassphrase().isEmpty() && JasyptUtils.isEncrypted(config.getPassphrase())) {
             config.setPassphrase(JasyptUtils.decrypt(config.getPassphrase()));
-            config.setPassphraseEncrypted(true);
+            config.setPassphraseEncrypted(false);
         }
     }
 }
