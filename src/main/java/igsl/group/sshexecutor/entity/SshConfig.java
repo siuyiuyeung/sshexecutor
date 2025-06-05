@@ -1,7 +1,9 @@
 package igsl.group.sshexecutor.entity;
 
+import igsl.group.sshexecutor.listener.SshConfigEntityListener;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,6 +26,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "ssh_configs")
+@EntityListeners(SshConfigEntityListener.class)
 public class SshConfig {
 
     @Id
@@ -78,6 +82,12 @@ public class SshConfig {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Transient
+    private boolean passwordEncrypted = false;
+
+    @Transient
+    private boolean passphraseEncrypted = false;
 
     public enum AuthType {
         PASSWORD,
