@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 
 @Service
 @Slf4j
@@ -53,11 +54,7 @@ public class SshService {
             }
 
             // Session configuration
-            java.util.Properties sessionConfig = new java.util.Properties();
-            sessionConfig.put("StrictHostKeyChecking", "no");
-            if (config.getAuthType() == SshConfig.AuthType.PRIVATE_KEY) {
-                sessionConfig.put("PreferredAuthentications", "publickey");
-            }
+            Properties sessionConfig = getProperties(config);
             session.setConfig(sessionConfig);
 
             // Connect
@@ -132,6 +129,23 @@ public class SshService {
                 session.disconnect();
             }
         }
+    }
+
+    private static Properties getProperties(SshConfig config) {
+        Properties sessionConfig = new Properties();
+        sessionConfig.put("StrictHostKeyChecking", "no");
+
+        // Apply legacy mode settings if enabled
+        if (config.isLegacyMode()) {
+            sessionConfig.put("X11Forwarding", "no");
+            sessionConfig.put("Compression", "no");
+            sessionConfig.put("TerminalType", "vt100");
+        }
+
+        if (config.getAuthType() == SshConfig.AuthType.PRIVATE_KEY) {
+            sessionConfig.put("PreferredAuthentications", "publickey");
+        }
+        return sessionConfig;
     }
 
     public boolean testConnection(SshConfig config) {

@@ -9,8 +9,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
@@ -77,6 +75,9 @@ public class SshConfig {
 
     @Transient
     private boolean passphraseEncrypted = false;
+
+    @Column(name = "legacy_mode")
+    private boolean legacyMode = false;
 
     public enum AuthType {
         PASSWORD,

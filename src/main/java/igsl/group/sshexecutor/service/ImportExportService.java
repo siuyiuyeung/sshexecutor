@@ -139,6 +139,7 @@ public class ImportExportService {
         config.setCommand(dto.getCommand());
         config.setScript(dto.getScript());
         config.setDescription(dto.getDescription());
+        config.setLegacyMode(dto.isLegacyMode());
 
         sshConfigRepository.save(config);
     }
@@ -156,6 +157,7 @@ public class ImportExportService {
         dto.setCommand(config.getCommand());
         dto.setScript(config.getScript());
         dto.setDescription(config.getDescription());
+        dto.setLegacyMode(config.isLegacyMode());
         return dto;
     }
 

@@ -20,4 +20,5 @@ public class SshConfigDto {
     private String command;
     private String script;
     private String description;
+    private boolean legacyMode = false;
 }
