@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Automation Scheduler</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/static">UI Automation Scheduler</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="#configs">Configurations</a>
+            <a class="nav-link" href="#history">History</a>
+            <a class="nav-link" href="#create">Create New</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div id="configs" class="mb-5">
+        <h2>Automation Configurations</h2>
+        <div class="row" id="configsList"></div>
+    </div>
+
+    <div id="history" class="mb-5">
+        <h2>Execution History</h2>
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text">Show</span>
+                    <select class="form-select" id="pageSize" onchange="changePageSize()" style="width: auto;">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="input-group-text">entries</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                    <option value="">All Status</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="RUNNING">Running</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="configFilter" onchange="applyFilters()">
+                    <option value="">All Configurations</option>
+                </select>
+            </div>
+            <div class="col-md-3 text-end">
+                <button class="btn btn-sm btn-secondary" onclick="loadHistory(currentPage)">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Config Name</th>
+                    <th>Status</th>
+                    <th>Start Time</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="historyTable">
+                <tr>
+                    <td colspan="5" class="text-center">Loading...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <p class="text-muted mb-0" id="historyInfo">Showing 0 to 0 of 0 entries</p>
+            </div>
+            <div class="col-md-6">
+                <nav aria-label="History pagination">
+                    <ul class="pagination justify-content-end mb-0" id="historyPagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div id="create" class="mb-5">
+        <h2 id="formTitle">Create New Configuration</h2>
+        <form id="configForm">
+            <input type="hidden" id="configId" value="">
+            <div class="mb-3">
+                <label for="configName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="configName" required>
+            </div>
+            <div class="mb-3">
+                <label for="configDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="configDescription" rows="2"></textarea>
+            </div>
+
+            <h4>Steps</h4>
+            <div id="stepsContainer"></div>
+            <button type="button" class="btn btn-sm btn-secondary mb-3" onclick="addStep()">Add Step</button>
+
+            <h4>Schedule</h4>
+            <div class="mb-3">
+                <label for="scheduleType" class="form-label">Schedule Type</label>
+                <select class="form-select" id="scheduleType" onchange="updateScheduleFields()">
+                    <option value="">No Schedule (Manual Only)</option>
+                    <option value="ONCE">Run Once</option>
+                    <option value="INTERVAL">Interval</option>
+                    <option value="CRON">Cron Expression</option>
+                </select>
+            </div>
+            <div id="scheduleFields"></div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="configActive" checked>
+                <label class="form-check-label" for="configActive">
+                    Active (Enable scheduling)
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitButton">Create Configuration</button>
+            <button type="button" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;" id="cancelButton">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Automation Execution Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/bootstrap.bundle.min.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

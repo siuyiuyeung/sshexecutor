@@ -9,14 +9,14 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>igsl.group</groupId>
-    <artifactId>sshexecutor</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>sshexecutor</name>
-    <description>sshexecutor</description>
+    <artifactId>automation-scheduler</artifactId>
+    <version>1.0.0</version>
+    <name>Automation Scheduler</name>
     <properties>
         <java.version>24</java.version>
         <maven.compiler.source>24</maven.compiler.source>
         <maven.compiler.target>24</maven.compiler.target>
+        <selenium.version>4.20.0</selenium.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
@@ -67,6 +67,18 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Selenium -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>5.8.0</version>
         </dependency>
     </dependencies>
 

@@ -1,11 +1,11 @@
 # Application Configuration
 spring:
   application:
-    name: SSH Executor
+    name: Automation Scheduler
 
   # Database Configuration (H2)
   datasource:
-    url: jdbc:h2:file:./data/sshexecutor
+    url: jdbc:h2:file:./data/automation
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -30,6 +30,11 @@ spring:
   thymeleaf:
     cache: false
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
+
 # Server Configuration
 server:
   port: 8080
@@ -42,15 +47,20 @@ ssh:
     execution-timeout: 30000
     use-virtual-threads: true
 
+automation:
+  screenshot:
+    path: ./screenshots
+  driver:
+    headless: false
+    timeout: 30
+
 # Logging
 logging:
   level:
-    igsl:
-      group:
-        sshexecutor: DEBUG
-    org:
-      springframework:
-        web: INFO
+    igsl.group.sshexecutor: DEBUG
+    org.springframework.web: INFO
+    org.openqa.selenium.devtools: OFF
+    org.openqa.selenium.chromium: OFF
   file:
     name: logs/ssh-executor.log
   logback:

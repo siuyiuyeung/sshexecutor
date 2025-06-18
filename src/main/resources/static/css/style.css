@@ -1,0 +1,108 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+#stepsContainer .card {
+    background-color: #f1f3f5;
+}
+
+.table {
+    background-color: white;
+}
+
+.badge {
+    padding: 0.5em 1em;
+}
+
+/* Button spacing */
+.card-body .btn {
+    margin: 2px;
+}
+
+/* Make configuration cards more compact */
+.card-body {
+    padding: 1rem;
+}
+
+/* Modal styles */
+.modal-xl {
+    max-width: 90%;
+}
+
+.img-thumbnail {
+    transition: transform 0.2s;
+}
+
+.img-thumbnail:hover {
+    transform: scale(1.05);
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.875rem;
+}
+
+code {
+    font-size: 0.875rem;
+    color: #d63384;
+    background-color: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* Status badge colors */
+.bg-success { background-color: #28a745 !important; }
+.bg-danger { background-color: #dc3545 !important; }
+.bg-primary { background-color: #007bff !important; }
+.bg-secondary { background-color: #6c757d !important; }
+.bg-warning { background-color: #ffc107 !important; }
+.bg-info { background-color: #17a2b8 !important; }
+
+/* Form improvements */
+#create {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+/* Pagination styles */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    color: #007bff;
+}
+
+.page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+}
+
+/* Filter styles */
+#pageSize {
+    max-width: 80px;
+}
+
+/* History info text */
+#historyInfo {
+    line-height: 38px; /* Align with pagination height */
+}
