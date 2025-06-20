@@ -26,11 +26,6 @@ public class SshConfigController {
     private final SshConfigService sshConfigService;
     private final ImportExportService importExportService;
 
-    @GetMapping("/")
-    public String index() {
-        return "redirect:/ssh";
-    }
-
     @GetMapping("/ssh")
     public String sshAutomationDashboard(Model model) {
         model.addAttribute("configs", sshConfigService.getAllConfigs());
