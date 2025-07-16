@@ -678,6 +678,7 @@ function addStepWithData(stepData) {
                         <option value="NAVIGATE" ${stepData.type === 'NAVIGATE' ? 'selected' : ''}>Navigate</option>
                         <option value="CLICK" ${stepData.type === 'CLICK' ? 'selected' : ''}>Click</option>
                         <option value="INPUT" ${stepData.type === 'INPUT' ? 'selected' : ''}>Input</option>
+                        <option value="PASSWORD_INPUT" ${stepData.type === 'PASSWORD_INPUT' ? 'selected' : ''}>Password Input</option>
                         <option value="WAIT" ${stepData.type === 'WAIT' ? 'selected' : ''}>Wait</option>
                         <option value="SCREENSHOT" ${stepData.type === 'SCREENSHOT' ? 'selected' : ''}>Screenshot</option>
                         <option value="SCROLL" ${stepData.type === 'SCROLL' ? 'selected' : ''}>Scroll</option>
@@ -742,6 +743,14 @@ function updateStepFieldsWithData(stepId, stepData) {
                 <input type="text" class="form-control mb-2" placeholder="CSS Selector (e.g., #username, input[name='email'])" 
                        data-field="selector" value="${stepData.selector || ''}" required>
                 <input type="text" class="form-control" placeholder="Text to input" 
+                       data-field="value" value="${stepData.value || ''}">
+            `;
+            break;
+        case 'PASSWORD_INPUT':
+            fields = `
+                <input type="text" class="form-control mb-2" placeholder="CSS Selector (e.g., #password, input[type='password'])" 
+                       data-field="selector" value="${stepData.selector || ''}" required>
+                <input type="password" class="form-control" placeholder="Password to input" 
                        data-field="value" value="${stepData.value || ''}">
             `;
             break;
@@ -878,6 +887,7 @@ function addStep() {
                         <option value="NAVIGATE">Navigate</option>
                         <option value="CLICK">Click</option>
                         <option value="INPUT">Input</option>
+                        <option value="PASSWORD_INPUT">Password Input</option>
                         <option value="WAIT">Wait</option>
                         <option value="SCREENSHOT">Screenshot</option>
                         <option value="SCROLL">Scroll</option>
@@ -941,6 +951,12 @@ function updateStepFields(stepId) {
             fields = `
                 <input type="text" class="form-control mb-2" placeholder="CSS Selector (e.g., #username, input[name=\'email\'])" data-field="selector" required>
                 <input type="text" class="form-control" placeholder="Text to input" data-field="value">
+            `;
+            break;
+        case 'PASSWORD_INPUT':
+            fields = `
+                <input type="text" class="form-control mb-2" placeholder="CSS Selector (e.g., #password, input[type=\'password\'])" data-field="selector" required>
+                <input type="password" class="form-control" placeholder="Password to input" data-field="value">
             `;
             break;
         case 'WAIT':

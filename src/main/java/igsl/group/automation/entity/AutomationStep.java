@@ -12,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.EntityListeners;
+import igsl.group.automation.listener.AutomationStepEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -21,6 +23,7 @@ import lombok.ToString;
 @Table(name = "automation_steps")
 @EqualsAndHashCode(exclude = {"config"})
 @ToString(exclude = {"config"})
+@EntityListeners(AutomationStepEntityListener.class)
 public class AutomationStep {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,12 +51,15 @@ public class AutomationStep {
     @Column(name = "capture_selector")
     private String captureSelector; // Specific area to capture
 
+    @Column(name = "is_encrypted")
+    private boolean encrypted = false; // Flag to indicate if value is encrypted
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "config_id")
     @JsonBackReference
     private AutomationConfig config;
 
     public enum StepType {
-        NAVIGATE, CLICK, INPUT, WAIT, SCREENSHOT, SCROLL, SELECT
+        NAVIGATE, CLICK, INPUT, PASSWORD_INPUT, WAIT, SCREENSHOT, SCROLL, SELECT
     }
 }

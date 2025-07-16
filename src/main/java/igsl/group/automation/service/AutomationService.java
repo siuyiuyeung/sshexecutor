@@ -109,6 +109,19 @@ public class AutomationService {
                 logs.append("Input text to: ").append(step.getSelector()).append("\n");
                 break;
 
+            case PASSWORD_INPUT:
+                if (step.getSelector() == null || step.getSelector().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Password input step requires a selector");
+                }
+                if (step.getValue() == null) {
+                    step.setValue(""); // Allow empty password
+                }
+                WebElement passwordElement = driver.findElement(By.cssSelector(step.getSelector()));
+                passwordElement.clear();
+                passwordElement.sendKeys(step.getValue());
+                logs.append("Input password to: ").append(step.getSelector()).append("\n");
+                break;
+
             case WAIT:
                 int waitTime = step.getWaitSeconds();
                 if (waitTime <= 0) {

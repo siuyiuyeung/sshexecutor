@@ -20,7 +20,12 @@ public class AutomationStepDTO {
         dto.setOrder(step.getOrder());
         dto.setType(step.getType());
         dto.setSelector(step.getSelector());
-        dto.setValue(step.getValue());
+        // Mask password values in the DTO
+        if (step.getType() == AutomationStep.StepType.PASSWORD_INPUT && step.getValue() != null && !step.getValue().isEmpty()) {
+            dto.setValue("********"); // Masked password
+        } else {
+            dto.setValue(step.getValue());
+        }
         dto.setWaitSeconds(step.getWaitSeconds());
         dto.setCaptureScreenshot(step.isCaptureScreenshot());
         dto.setCaptureSelector(step.getCaptureSelector());
